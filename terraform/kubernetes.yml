@@ -1,0 +1,88 @@
+- hosts: master
+  become: yes
+  tasks:
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Add cert
+      shell: >
+        apt-get install -y apt-transport-https ca-certificates curl
+
+    - name: Add Kubernetes apt key
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+        dest: /tmp/kubernetes-apt-keyring.gpg
+        mode: '0644'
+
+    - name: Add Kubernetes apt key to keyring
+      shell: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-apt-keyring.gpg
+
+    - name: Add 2
+      shell: >
+        sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add 3
+      shell: >
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Add 4
+      shell: >
+        sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list   
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Install kubeadm, kubelet, and kubectl
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+
+    - name: Initialize Kubernetes master
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: kubeadm_output
+      ignore_errors: yes
+
+    - name: minikube 1
+      shell: >
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+
+    - name: minikube 2
+      shell: >
+        sudo dpkg -i minikube_latest_amd64.deb
+
+    - name: minikube 3
+      shell: >
+        sudo usermod -aG docker $USER && newgrp docker
+
+    - name: minikube 4
+      shell: >
+        minikube start 
+
+    - name: directory
+      shell: >
+        mkdir kubernetes && cd kubernetes
+
+    - name: Copy a file
+      copy:
+        src: kubernetes/
+        dest: kubernetes/
+
+    - name: apply
+      shell: >
+        kubectl apply -f configMap.yaml && kubectl apply -f secrets.yaml && kubectl apply -f maria.yaml && kubectl apply -f flaskr.yaml
+
+    - name: Install Calico network plugin
+      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      when: "'calico' in kubeadm_output.stdout"
