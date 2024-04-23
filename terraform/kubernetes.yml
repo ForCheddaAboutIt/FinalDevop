@@ -60,19 +60,23 @@
 
     - name: minikube 2
       shell: >
-        sudo dpkg -i minikube_latest_amd64.deb
+        dpkg -i minikube_latest_amd64.deb
 
     - name: minikube 3
       shell: >
-        sudo usermod -aG docker $USER && newgrp docker
+        usermod -aG docker $USER
 
     - name: minikube 4
       shell: >
-        minikube start 
+        minikube start --force
 
     - name: directory
       shell: >
-        mkdir kubernetes && cd kubernetes
+        mkdir kubernetes
+
+    - name: directory move
+      shell: >
+        cd kubernetes
 
     - name: Copy a file
       copy:
