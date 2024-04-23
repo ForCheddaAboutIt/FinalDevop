@@ -54,22 +54,6 @@
       register: kubeadm_output
       ignore_errors: yes
 
-    - name: minikube 1
-      shell: >
-        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
-
-    - name: minikube 2
-      shell: >
-        dpkg -i minikube_latest_amd64.deb
-
-    - name: minikube 3
-      shell: >
-        usermod -aG docker $USER
-
-    - name: minikube 4
-      shell: >
-        minikube start --force
-
     - name: directory
       shell: >
         mkdir kubernetes
@@ -83,10 +67,31 @@
         src: kubernetes/
         dest: kubernetes/
 
-    - name: apply
+    - name: minikube 1
       shell: >
-        kubectl apply -f configMap.yaml && kubectl apply -f secrets.yaml && kubectl apply -f maria.yaml && kubectl apply -f flaskr.yaml
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+
+    - name: minikube 2
+      shell: >
+        dpkg -i minikube_latest_amd64.deb
+   
+    - name: Add user to the docker group
+      become: yes
+      user:
+        name: "ubuntu"
+        groups: docker
+        append: yes
+
+    - name: minikube 4
+      become: no
+      shell: >
+        minikube start --driver=docker 
+
+    - name: apply
+      become: no
+      shell: >
+        kubectl apply -f /home/ubuntu/kubernetes/configMap.yaml && kubectl apply -f /home/ubuntu/kubernetes/secrets.yaml && kubectl apply -f /home/ubuntu/kubernetes/maria.yaml && kubectl apply -f /home/ubuntu/kubernetes/flaskr.yaml
 
     - name: Install Calico network plugin
       command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-      when: "'calico' in kubeadm_output.stdout"
+
