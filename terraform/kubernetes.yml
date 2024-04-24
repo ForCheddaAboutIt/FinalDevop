@@ -2,12 +2,105 @@
   become: yes
   tasks:
 
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Add cert
+      shell: >
+        apt-get install -y apt-transport-https ca-certificates curl
+
+    - name: Add Kubernetes apt key
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+        dest: /tmp/kubernetes-apt-keyring.gpg
+        mode: '0644'
+
+    - name: Add Kubernetes apt key to keyring
+      shell: gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg /tmp/kubernetes-apt-keyring.gpg
+
+    - name: Add 2
+      shell: >
+        sudo chmod 644 /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+
+    - name: Add 3
+      shell: >
+         echo 'deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Add 4
+      shell: >
+        sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+           
+    - name: Add Kubernetes GPG key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+  
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Install kubeadm, kubelet, and kubectl
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+
+    - name: Initialize Kubernetes master
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: kubeadm_output
+      ignore_errors: yes
+
+    - name: directory
+      shell: >
+        mkdir kubernetes
+
+    - name: directory move
+      shell: >
+        cd kubernetes
+
+    - name: Copy a file
+      copy:
+        src: kubernetes/
+        dest: kubernetes/
+
+    - name: minikube 1
+      shell: >
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+
+    - name: minikube 2
+      shell: >
+        dpkg -i minikube_latest_amd64.deb
+   
+    - name: Add user to the docker group
+      become: yes
+      user:
+        name: "ubuntu"
+        groups: docker
+        append: yes
+
+    - name: Reset ssh connection to allow user changes to affect ansible user
+      ansible.builtin.meta:
+        reset_connection
+
+    - name: minikube 4
+      become: no
+      shell: >
+        minikube start --driver=docker 
 
     - name: apply
       become: no
       shell: >
-        kubectl apply -f /home/vagrant/kubernetes/configMap.yaml && kubectl apply -f /home/vagrant/kubernetes/secrets.yaml && kubectl apply -f /home/vagrant/kubernetes/maria.yaml && kubectl apply -f /home/vagrant/kubernetes/flaskr.yaml
+        kubectl apply -f /home/ubuntu/kubernetes/configMap.yaml && kubectl apply -f /home/ubuntu/kubernetes/secrets.yaml && kubectl apply -f /home/ubuntu/kubernetes/maria.yaml && kubectl apply -f /home/ubuntu/kubernetes/flaskr.yaml
 
     - name: Install Calico network plugin
       command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-
