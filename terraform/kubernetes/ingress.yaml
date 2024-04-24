@@ -4,7 +4,7 @@ metadata:
   name: flaskr-ingress
 spec:
   rules:
-    - host: app.flaskr1234.com
+    - host: flaskr.internal
       http:
         paths:
           - path: /
