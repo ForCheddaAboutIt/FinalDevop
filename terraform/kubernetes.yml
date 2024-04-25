@@ -17,25 +17,19 @@
         mode: '0644'
 
     - name: Add Kubernetes apt key to keyring
-      shell: gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg /tmp/kubernetes-apt-keyring.gpg
+      shell: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-apt-keyring.gpg
 
     - name: Add 2
       shell: >
-        sudo chmod 644 /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+        sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
     - name: Add 3
       shell: >
-         echo 'deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
     - name: Add 4
       shell: >
-        sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
-           
-    - name: Add Kubernetes GPG key
-      apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
-  
+        sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list   
 
     - name: Update package cache
       apt:
@@ -102,5 +96,9 @@
       shell: >
         kubectl apply -f /home/ubuntu/kubernetes/configMap.yaml && kubectl apply -f /home/ubuntu/kubernetes/secrets.yaml && kubectl apply -f /home/ubuntu/kubernetes/maria.yaml && kubectl apply -f /home/ubuntu/kubernetes/flaskr.yaml
 
-    - name: Install Calico network plugin
-      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+    - name: forward
+      become: no
+      shell: >
+         kubectl port-forward svc/flaskr-service 5000:5000 --address 0.0.0.0 &
+
+

@@ -46,11 +46,14 @@ resource "aws_security_group" "security" {
   }
 
   ingress {
-      cidr_blocks = ["0.0.0.0/0"]
-      from_port   = 5000
-      to_port     = 5000
-      protocol    = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+    from_port = 5000
+    to_port   = 5000
+    protocol  = "tcp"
   }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -76,7 +79,7 @@ resource "aws_key_pair" "kp" {
 resource "aws_instance" "test_env_ec2" {
   count                       = 1
   ami                         = "ami-07d9b9ddc6cd8dd30"
-  instance_type               = "t2.xlarge"
+  instance_type               = "t2.medium"
   key_name                    = "myKey"
   security_groups             = ["${aws_security_group.security.id}"]
   associate_public_ip_address = true
@@ -86,4 +89,3 @@ resource "aws_instance" "test_env_ec2" {
     Name = var.instance_tag2[count.index]
   }
 }
-
