@@ -92,8 +92,9 @@
         kubectl apply -f /home/ubuntu/kubernetes/configMap.yaml && kubectl apply -f /home/ubuntu/kubernetes/secrets.yaml && kubectl apply -f /home/ubuntu/kubernetes/maria.yaml && kubectl apply -f /home/ubuntu/kubernetes/flaskr.yaml
 
     - name: forward
-      become: no
+      become: yes
       shell: >
-         kubectl port-forward svc/flaskr-service 5000:5000 --address 0.0.0.0 &
+         kubectl port-forward svc/flaskr-service 5000:5000 --address 0.0.0.0 >/dev/null 2>&1 &
+
 
 

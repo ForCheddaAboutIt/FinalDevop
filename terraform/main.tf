@@ -89,3 +89,16 @@ resource "aws_instance" "test_env_ec2" {
     Name = var.instance_tag2[count.index]
   }
 }
+
+resource "null_resource" "capture_ip" {
+  # This resource has no other purpose than to run the local-exec provisioner
+  # after each instance has been created.
+  count = length(aws_instance.test_env_ec2)
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "${aws_instance.test_env_ec2[count.index].public_ip}" > instance_ip_${count.index}.txt
+      python3 dynamic_inventory.py
+    EOT
+  }
+}
